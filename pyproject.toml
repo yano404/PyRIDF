@@ -4,6 +4,7 @@ version = "0.1.0"
 description = ""
 authors = ["Takayuki YANO <yano.takayuki.55w@st.kyoto-u.ac.jp>"]
 readme = "README.md"
+packages = [{include = "pyridf", from = "src"}]
 
 [tool.poetry.dependencies]
 python = "^3.7"
