@@ -1,14 +1,16 @@
 
 class element:
-    def __init__(self, rev, layer, cid, size, addr):
+    def __init__(self, rev, layer, cid, size, addr, parent=None):
         self.revision = rev
         self.layer = layer
         self.classid = cid
         self.size = size
         self.address = addr
+        self.parent = parent
         self.classname = None
         self.data = b""
         self.header_size = 8 #bytes
+        self.obj_id = id(self)
 
     def calc_size(self):
         # Return element size (in word unit)
@@ -27,12 +29,20 @@ class element:
 
 
 class container(element):
-    def __init__(self, rev, layer, cid, size, addr):
-        super().__init__(rev, layer, cid, size, addr)
+    def __init__(self, rev, layer, cid, size, addr, parent=None):
+        super().__init__(rev, layer, cid, size, addr, parent)
         self.children = []
     
     def add_child(self, child):
         self.children.append(child)
+
+    def del_child(self, objid):
+        for i in range(len(self.children)):
+            child = self.children[i]
+            if child.obj_id == objid:
+                self.children.pop(i)
+                return 0
+        return 1
 
     def calc_size(self):
         # Return container size (in word unit)
@@ -53,8 +63,8 @@ class block(container):
     Class ID: 0 / 1 / 2
     Layer: 0
     """
-    def __init__(self, cid, size, addr, rev=0):
-        super().__init__(rev, 0, cid, size, addr)
+    def __init__(self, cid, size, addr, rev=0, parent=None):
+        super().__init__(rev, 0, cid, size, addr, parent)
         if cid == 0:
             self.classname = "Event Fragment"
         elif cid == 1:
@@ -68,8 +78,8 @@ class block_ender(element):
     Class ID: 9
     Layer: 1
     """
-    def __init__(self, addr, rev=0):
-        super().__init__(rev, 1, 9, 6, addr)
+    def __init__(self, addr, rev=0, parent=None):
+        super().__init__(rev, 1, 9, 6, addr, parent)
         self.classname = "Block Ender"
         self.blocksize = None
         self.header_size = 8 #bytes
@@ -86,8 +96,8 @@ class block_number(element):
     Class ID: 8
     Layer: 1
     """
-    def __init__(self, addr, rev=0):
-        super().__init__(rev, 1, 8, 6, addr)
+    def __init__(self, addr, rev=0, parent=None):
+        super().__init__(rev, 1, 8, 6, addr, parent)
         self.classname = "Block Number"
         self.blocknumber = None
         self.header_size = 8 #bytes
@@ -104,8 +114,8 @@ class comment(element):
     Class ID: 5
     Layer: 1 or 2
     """
-    def __init__(self, layer, size, addr, rev=0):
-        super().__init__(rev, layer, 5, size, addr)
+    def __init__(self, layer, size, addr, rev=0, parent=None):
+        super().__init__(rev, layer, 5, size, addr, parent)
         self.classname = "Comment"
         self.date = None
         self.id = None
@@ -129,8 +139,8 @@ class event(container):
     Class ID: 3
     Layer: 1
     """
-    def __init__(self, size, addr, rev=0):
-        super().__init__(rev, 1, 3, size, addr)
+    def __init__(self, size, addr, rev=0, parent=None):
+        super().__init__(rev, 1, 3, size, addr, parent)
         self.classname = "Event"
         self.eventnumber = None
         self.header_size = 12 #bytes
@@ -146,8 +156,8 @@ class event_ts(container):
     Class ID: 6
     Layer: 1
     """
-    def __init__(self, size, addr, rev=0):
-        super().__init__(rev, 1, 6, size, addr)
+    def __init__(self, size, addr, rev=0, parent=None):
+        super().__init__(rev, 1, 6, size, addr, parent)
         self.classname = "Event with Timestamp"
         self.eventnumber = None
         self.timestamp = None
@@ -165,8 +175,8 @@ class segment(element):
     Class ID: 4
     Layer: 2
     """
-    def __init__(self, size, addr, rev=0):
-        super().__init__(rev, 2, 4, size, addr)
+    def __init__(self, size, addr, rev=0, parent=None):
+        super().__init__(rev, 2, 4, size, addr, parent)
         self.classname = "Segment"
         self.id = None
         self.data = None
@@ -187,8 +197,8 @@ class timestamp(element):
     Class ID: 16
     Layer: 2
     """
-    def __init__(self, size, addr, rev=0):
-        super().__init__(rev, 2, 16, size, addr)
+    def __init__(self, size, addr, rev=0, parent=None):
+        super().__init__(rev, 2, 16, size, addr, parent)
         self.classname = "Timestamp"
         self.data = None
 
@@ -201,8 +211,8 @@ class scaler(element):
     Class ID: 11 / 12 / 13
     Layer: 1 or 2
     """
-    def __init__(self, layer, cid, size, addr, rev=0):
-        super().__init__(rev, layer, cid, size, addr)
+    def __init__(self, layer, cid, size, addr, rev=0, parent=None):
+        super().__init__(rev, layer, cid, size, addr, parent)
         if cid == 11:
             self.classname = "Non Clear Scaler(24bit)"
         elif cid == 12:
@@ -231,8 +241,8 @@ class status(element):
     Class ID: 21
     Layer: 1 or 2
     """
-    def __init__(self, layer, size, addr, rev=0):
-        super().__init__(rev, layer, 21, size, addr)
+    def __init__(self, layer, size, addr, rev=0, parent=None):
+        super().__init__(rev, layer, 21, size, addr, parent)
         self.classname = "Status"
         self.id = None
         self.date = None

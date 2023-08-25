@@ -24,8 +24,13 @@ class ridf:
         self.block = []
         self.event = []
 
-    def parse(self):
+    def parse(self, maxblock=None):
         while self.cursor < self.size:
+            if maxblock is not None:
+                if len(self.block) > maxblock:
+                    self.block.pop()
+                    break
+
             hd1  = self.readint(0,self.token_size)
             rev  = (hd1 & self.hd1_revision_mask) >> self.hd1_revision_shift
             ly   = (hd1 & self.hd1_layer_mask) >> self.hd1_layer_shift
@@ -43,7 +48,7 @@ class ridf:
             elif ly == 1:
                 if cid == 8:
                     # Block Number
-                    blk = element.block_number(addr)
+                    blk = element.block_number(addr, parent=self.current_blk)
                     blk.blocknumber = self.readint(8,12)
                     self.current_blk.add_child(blk)
                     self.cursor += size*self.word_size
@@ -51,7 +56,7 @@ class ridf:
                     
                 elif cid == 5:
                     # Comment
-                    com = element.comment(ly, size, addr)
+                    com = element.comment(ly, size, addr, parent=self.current_blk)
                     date = self.readint(8,12)
                     comid = self.readint(12,16)
                     data = self.readbytes(com.header_size, size*self.word_size)
@@ -61,7 +66,7 @@ class ridf:
 
                 elif cid == 3:
                     # Event Data
-                    self.current_evt = element.event(size, addr)
+                    self.current_evt = element.event(size, addr, parent=self.current_blk)
                     self.current_evt.eventnumber = self.readint(8,12) 
                     self.current_blk.add_child(self.current_evt)
                     self.event.append(self.current_evt)
@@ -69,7 +74,7 @@ class ridf:
 
                 elif cid == 6:
                     # Event Data w/ Time stamp
-                    self.current_evt = element.event_ts(size, addr)
+                    self.current_evt = element.event_ts(size, addr, parent=self.current_blk)
                     self.current_evt.eventnumber = self.readint(8,12)
                     self.current_evt.timestamp = self.readint(12,20)
                     self.current_blk.add_child(self.current_evt)
@@ -79,7 +84,7 @@ class ridf:
 
                 elif cid == 11 or cid == 12 or cid == 13:
                     # Scaler
-                    sca = element.scaler(ly, cid, size, addr)
+                    sca = element.scaler(ly, cid, size, addr, parent=self.current_blk)
                     date = self.readint(8,12)
                     scaid = self.readint(12,16)
                     data = self.readbytes(sca.header_size, size*self.word_size)
@@ -89,7 +94,7 @@ class ridf:
 
                 elif cid == 21:
                     # Status
-                    sta = element.status(ly, size, addr)
+                    sta = element.status(ly, size, addr, parent=self.current_blk)
                     date = self.readint(8,12)
                     staid = self.readint(12,16)
                     data = self.readbytes(sta.header_size, size*self.word_size)
@@ -99,7 +104,7 @@ class ridf:
 
                 elif cid == 9:
                     # Block Ender
-                    blk = element.block_ender(addr)
+                    blk = element.block_ender(addr, parent=self.current_blk)
                     blk.blocksize = self.readint(8,12)
                     self.current_blk.add_child(blk)
                     self.cursor += size*self.word_size
@@ -107,7 +112,7 @@ class ridf:
             elif ly == 2:
                 if cid == 4:
                     # Segment Data
-                    seg = element.segment(size, addr)
+                    seg = element.segment(size, addr, parent=self.current_evt)
                     segid = self.readint(8,12)
                     data = self.readbytes(seg.header_size, size*self.word_size)
                     seg.set_payload(segid, data)
@@ -116,7 +121,7 @@ class ridf:
 
                 elif cid == 5:
                     # Comment
-                    com = element.comment(ly, size, addr)
+                    com = element.comment(ly, size, addr, parent=self.current_evt)
                     date = self.readint(8,12)
                     comid = self.readint(12,16)
                     data = self.readbytes(com.header_size, size*self.word_size)
@@ -126,13 +131,13 @@ class ridf:
 
                 elif cid == 16:
                     # Timestamp
-                    ts = element.timestamp(size, addr)
+                    ts = element.timestamp(size, addr, parent=self.current_evt)
                     data = self.readbytes(ts.header_size, size*self.word_size)
                     ts.set_payload(data)
                     self.current_evt.add_child(ts)
                 elif cid == 11 or cid == 12 or cid == 13:
                     # Scaler
-                    sca = element.scaler(ly, cid, size, addr)
+                    sca = element.scaler(ly, cid, size, addr, parent=self.current_evt)
                     date = self.readint(8,12)
                     scaid = self.readint(12,16)
                     data = self.readbytes(sca.header_size, size*self.word_size)
@@ -142,7 +147,7 @@ class ridf:
 
                 elif cid == 21:
                     # Status
-                    sta = element.status(ly, size, addr)
+                    sta = element.status(ly, size, addr, parent=self.current_evt)
                     date = self.readint(8,12)
                     staid = self.readint(12,16)
                     data = self.readbytes(sta.header_size, size*self.word_size)
