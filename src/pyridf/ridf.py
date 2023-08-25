@@ -71,6 +71,7 @@ class ridf:
                     self.current_blk.add_child(self.current_evt)
                     self.event.append(self.current_evt)
                     self.cursor += self.current_evt.header_size
+                    print(f"evtn: {self.current_evt.eventnumber}")
 
                 elif cid == 6:
                     # Event Data w/ Time stamp
@@ -135,6 +136,8 @@ class ridf:
                     data = self.readbytes(ts.header_size, size*self.word_size)
                     ts.set_payload(data)
                     self.current_evt.add_child(ts)
+                    self.cursor += size*self.word_size
+
                 elif cid == 11 or cid == 12 or cid == 13:
                     # Scaler
                     sca = element.scaler(ly, cid, size, addr, parent=self.current_evt)
