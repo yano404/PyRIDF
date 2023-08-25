@@ -169,3 +169,11 @@ class ridf:
         for blk in self.block:
             code += blk.encode()
         return code
+
+    def del_block(self, block_id):
+        for i in range(len(self.block)):
+            blk = self.block[i]
+            if blk.obj_id == block_id:
+                self.block.pop(i)
+                return 0
+        return 1
