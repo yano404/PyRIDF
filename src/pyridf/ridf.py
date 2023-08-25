@@ -163,3 +163,9 @@ class ridf:
     
     def readbytes(self, start, end):
         return self.content[self.cursor+start:self.cursor+end]
+
+    def encode(self):
+        code = b""
+        for blk in self.block:
+            code += blk.encode()
+        return code
