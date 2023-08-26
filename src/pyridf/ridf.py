@@ -43,7 +43,6 @@ class ridf:
                 self.current_blk = element.block(cid, size, addr)
                 self.block.append(self.current_blk)
                 self.cursor += self.current_blk.header_size
-                print(f"cursor: {self.cursor}")
 
             elif ly == 1:
                 if cid == 8:
@@ -52,7 +51,6 @@ class ridf:
                     blk.blocknumber = self.readint(8,12)
                     self.current_blk.add_child(blk)
                     self.cursor += size*self.word_size
-                    print(f"blkn: {blk.blocknumber}")
                     
                 elif cid == 5:
                     # Comment
@@ -71,7 +69,7 @@ class ridf:
                     self.current_blk.add_child(self.current_evt)
                     self.event.append(self.current_evt)
                     self.cursor += self.current_evt.header_size
-                    print(f"evtn: {self.current_evt.eventnumber}")
+                    print(f"\revtn = {self.current_evt.eventnumber}", end="")
 
                 elif cid == 6:
                     # Event Data w/ Time stamp
@@ -81,7 +79,7 @@ class ridf:
                     self.current_blk.add_child(self.current_evt)
                     self.event.append(self.current_evt)
                     self.cursor += self.current_evt.header_size
-                    print(f"evtn: {self.current_evt.eventnumber}")
+                    print(f"\revtn = {self.current_evt.eventnumber}", end="")
 
                 elif cid == 11 or cid == 12 or cid == 13:
                     # Scaler
@@ -157,6 +155,9 @@ class ridf:
                     sta.set_payload(staid, date, data)
                     self.current_evt.add_child(sta)
                     self.cursor += size*self.word_size
+        print(f"\n{self.file.name}")
+        print(f"Number of Blocks: {len(self.block)}")
+        print(f"Number of Events: {len(self.event)}")
 
 
     def readint(self, start, end):
