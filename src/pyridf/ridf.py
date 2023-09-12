@@ -15,20 +15,62 @@ class ridf:
     hd1_blksize_shift  = 0
     current_blk = None
     current_event = None
+    max_blk_size = 0x0080_0000
+
+    def __init__(self):
+        self.size = 0 #bytes
+        self.block = []
+        self.event = []
+
+    def encode(self):
+        code = b""
+        for blk in self.block:
+            code += blk.encode()
+        return code
+
+    def del_block(self, block_id):
+        for i in range(len(self.block)):
+            blk = self.block[i]
+            if blk.obj_id == block_id:
+                self.block.pop(i)
+                return 0
+        return 1
+
+    def update(self):
+        self.size = 0
+        for blk in self.block:
+            blk.update()
+            self.size += blk.size
+
+
+class file:
+    endian = 'little'
+    word_size = 2 #bytes
+    token_size = 4 #bytes
+    hd1_revision_mask  = 0xc000_0000
+    hd1_revision_shift = 30
+    hd1_layer_mask     = 0x3000_0000
+    hd1_layer_shift    = 28
+    hd1_classid_mask   = 0x0fc0_0000
+    hd1_classid_shift  = 22
+    hd1_blksize_mask   = 0x003f_ffff
+    hd1_blksize_shift  = 0
+    current_blk = None
+    current_event = None
 
     def __init__(self, fname: str):
         self.file = open(fname, 'rb')
         self.content = self.file.read()
         self.cursor = 0
         self.size = len(self.content) #bytes
-        self.block = []
-        self.event = []
+        self.ridf = ridf()
+        self.ridf.size = self.size >> 1
 
     def parse(self, maxblock=None):
         while self.cursor < self.size:
             if maxblock is not None:
-                if len(self.block) > maxblock:
-                    self.block.pop()
+                if len(self.ridf.block) > maxblock:
+                    self.ridf.block.pop()
                     break
 
             hd1  = self.readint(0,self.token_size)
@@ -41,7 +83,7 @@ class ridf:
             if ly == 0:
                 # Global Block Header
                 self.current_blk = element.block(cid, size, addr)
-                self.block.append(self.current_blk)
+                self.ridf.block.append(self.current_blk)
                 self.cursor += self.current_blk.header_size
 
             elif ly == 1:
@@ -67,7 +109,7 @@ class ridf:
                     self.current_evt = element.event(size, addr, parent=self.current_blk)
                     self.current_evt.eventnumber = self.readint(8,12) 
                     self.current_blk.add_child(self.current_evt)
-                    self.event.append(self.current_evt)
+                    self.ridf.event.append(self.current_evt)
                     self.cursor += self.current_evt.header_size
                     print(f"\revtn = {self.current_evt.eventnumber}", end="")
 
@@ -77,7 +119,7 @@ class ridf:
                     self.current_evt.eventnumber = self.readint(8,12)
                     self.current_evt.timestamp = self.readint(12,20)
                     self.current_blk.add_child(self.current_evt)
-                    self.event.append(self.current_evt)
+                    self.ridf.event.append(self.current_evt)
                     self.cursor += self.current_evt.header_size
                     print(f"\revtn = {self.current_evt.eventnumber}", end="")
 
@@ -156,8 +198,8 @@ class ridf:
                     self.current_evt.add_child(sta)
                     self.cursor += size*self.word_size
         print(f"\n{self.file.name}")
-        print(f"Number of Blocks: {len(self.block)}")
-        print(f"Number of Events: {len(self.event)}")
+        print(f"Number of Blocks: {len(self.ridf.block)}")
+        print(f"Number of Events: {len(self.ridf.event)}")
 
 
     def readint(self, start, end):
@@ -168,16 +210,8 @@ class ridf:
     def readbytes(self, start, end):
         return self.content[self.cursor+start:self.cursor+end]
 
-    def encode(self):
-        code = b""
-        for blk in self.block:
-            code += blk.encode()
-        return code
 
-    def del_block(self, block_id):
-        for i in range(len(self.block)):
-            blk = self.block[i]
-            if blk.obj_id == block_id:
-                self.block.pop(i)
-                return 0
-        return 1
+def read(filepath):
+    f = file(filepath)
+    f.parse()
+    return f.ridf
