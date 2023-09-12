@@ -27,6 +27,9 @@ class element:
         hdr += self.address.to_bytes(4, "little")
         return hdr
 
+    def update(self):
+        self.size = self.calc_size()
+
 
 class container(element):
     def __init__(self, rev, layer, cid, size, addr, parent=None):
@@ -56,6 +59,12 @@ class container(element):
         for child in self.children:
             code += child.encode()
         return code
+
+    def update(self):
+        self.size = self.header_size >> 1
+        for child in self.children:
+            child.update()
+            self.size += child.size
 
 
 class block(container):
@@ -89,6 +98,11 @@ class block_ender(element):
 
     def encode(self):
         return self.encode_header() + self.blocksize.to_bytes(4, "little")
+
+    def update(self):
+        self.size = self.calc_size()
+        if isinstance(self.parent, block):
+            self.blocksize = self.parent.size
 
 
 class block_number(element):
