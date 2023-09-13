@@ -1,3 +1,4 @@
 from pyridf.ridf import ridf
-from pyridf.ridf import read
+from pyridf.io import read, write
+from pyridf.parser import parser
 from pyridf import element
