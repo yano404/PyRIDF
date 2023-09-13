@@ -13,10 +13,10 @@ class ridf:
         self.event = []
 
     def encode(self):
-        code = b""
+        codes = []
         for blk in self.block:
-            code += blk.encode()
-        return code
+            codes.append(blk.encode())
+        return b"".join(codes)
 
     def del_block(self, block_id):
         for i in range(len(self.block)):

@@ -55,10 +55,10 @@ class container(element):
         return container_size
 
     def encode(self):
-        code = self.encode_header()
+        codes = [self.encode_header()]
         for child in self.children:
-            code += child.encode()
-        return code
+            codes.append(child.encode())
+        return b"".join(codes)
 
     def update(self):
         self.size = self.header_size >> 1
