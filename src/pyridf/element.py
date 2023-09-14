@@ -11,6 +11,8 @@ class element:
         self.data = b""
         self.header_size = 8 #bytes
         self.obj_id = id(self)
+        if parent is not None and isinstance(parent, container):
+            self.parent.add_child(self)
 
     def calc_size(self):
         # Return element size (in word unit)
@@ -37,7 +39,9 @@ class container(element):
         self.children = []
     
     def add_child(self, child):
-        self.children.append(child)
+        child.parent = self
+        if len([x for x in self.children if x.obj_id == child.obj_id]) == 0:
+            self.children.append(child)
 
     def del_child(self, objid):
         for i in range(len(self.children)):
