@@ -199,6 +199,7 @@ class segment(element):
         super().__init__(rev, 2, 4, size, addr, parent)
         self.classname = "Segment"
         self.id = None
+        self.segment_revision = 0
         self.device = None
         self.focal_plane = None
         self.detector = None
@@ -209,7 +210,7 @@ class segment(element):
     def set_segid(self, segid):
         self.id = segid
         (
-            self.revision,
+            self.segment_revision,
             self.device,
             self.focal_plane,
             self.detector,
