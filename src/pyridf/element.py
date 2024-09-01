@@ -1,4 +1,6 @@
 
+from .util import make_segid, parse_segid
+
 class element:
     def __init__(self, rev, layer, cid, size, addr, parent=None):
         self.revision = rev
@@ -197,12 +199,29 @@ class segment(element):
         super().__init__(rev, 2, 4, size, addr, parent)
         self.classname = "Segment"
         self.id = None
+        self.device = None
+        self.focal_plane = None
+        self.detector = None
+        self.module = None
         self.data = None
         self.header_size = 12 #bytes
 
-    def set_payload(self, segid, data):
+    def set_segid(self, segid):
         self.id = segid
+        (
+            self.revision,
+            self.device,
+            self.focal_plane,
+            self.detector,
+            self.module
+        ) = parse_segid(segid).values()
+    
+    def set_data(self, data):
         self.data = data
+
+    def set_payload(self, segid, data):
+        self.set_segid(segid)
+        self.set_data(data)
 
     def encode_header(self):
         hdr = super().encode_header()
